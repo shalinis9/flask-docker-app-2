@@ -1,33 +1,41 @@
 pipeline {
     agent any
 
-    environment {
-        IMAGE_NAME = 'flaskdockerapp2'
-        DOCKERHUB_USER = 'shal905'
-    }
-
     stages {
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
+                sh 'docker build -t flaskdockerapp2 .'
             }
         }
 
         stage('Tag Docker Image') {
             steps {
-                sh 'docker tag $IMAGE_NAME $DOCKERHUB_USER/$IMAGE_NAME'
+                sh 'docker tag flaskdockerapp2 shal905/flaskdockerapp2'
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                withCredentials([string(credentialsId: 'dockerhub-pass', variable: 'DOCKER_PASS')]) {
                     sh """
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                        docker push $DOCKERHUB_USER/$IMAGE_NAME
+                        echo $DOCKER_PASS | docker login -u shal905 --password-stdin
+                        docker push shal905/flaskdockerapp2
                     """
                 }
             }
+        }
+    }
+
+    post {
+        success {
+            mail to: 'shalini.s123456@gmail.com',
+                 subject: 'Jenkins Build Success',
+                 body: "The Jenkins pipeline for flaskdockerapp2 completed successfully!"
+        }
+        failure {
+            mail to: 'shalini.s123456@gmail.com',
+                 subject: 'Jenkins Build Failed',
+                 body: "The Jenkins pipeline for flaskdockerapp2 has failed."
         }
     }
 }
